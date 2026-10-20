@@ -1,13 +1,38 @@
-import Logo from './components/Logo';
+import { Routes, Route } from 'react-router-dom';
+import MainLayout from './layouts/MainLayout';
 
-function App() {
+import Home from './pages/Home';
+import Menu from './pages/Menu';
+import Cart from './pages/Cart';
+import Checkout from './pages/Checkout';
+import Login from './pages/Login';
+import Signup from './pages/Signup';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
+import Dashboard from './pages/Dashboard';
+import Admin from './pages/Admin';
+import OrderStatus from './pages/OrderStatus';
+import NotFound from './pages/NotFound';
+
+export default function App() {
   return (
-    <div className="min-h-screen bg-brand-cream flex flex-col items-center justify-center">
-      <Logo />
-      <h1 className="text-3xl font-bold mt-8 text-text-dark">Food 101 is Building...</h1>
-      <p className="text-text-muted mt-2">Tailwind is working perfectly.</p>
-    </div>
+    <Routes>
+      <Route element={<MainLayout />}>
+        <Route path="/" element={<Home />} />
+        <Route path="/menu" element={<Menu />} />
+        <Route path="/cart" element={<Cart />} />
+        <Route path="/checkout" element={<Checkout />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/order-status/:id" element={<OrderStatus />} />
+        <Route path="*" element={<NotFound />} />
+      </Route>
+
+      {/* Admin route (will eventually get its own layout with sidebar) */}
+      <Route path="/admin" element={<Admin />} />
+    </Routes>
   );
 }
-
-export default App;

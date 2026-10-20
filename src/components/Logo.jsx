@@ -1,4 +1,6 @@
 export default function Logo({ variant = 'full', className = '' }) {
+  const isLight = className.includes('text-white');
+  
   // variant: 'full' | 'icon'
   if (variant === 'icon') {
     return (
@@ -15,19 +17,19 @@ export default function Logo({ variant = 'full', className = '' }) {
     );
   }
 
-  // 'full' variant (for navbar and footer)
+  // 'full' variant
   return (
     <div className={`flex items-center gap-2 ${className}`}>
       <div className="flex items-center justify-center w-10 h-10 bg-brand-red rounded-xl shadow-sm">
         <svg width="28" height="28" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-           <path d="M30 40 Q30 30 40 30 L55 30 Q60 30 60 35" stroke="white" strokeWidth="10" strokeLinecap="round" fill="none" />
+          <path d="M30 40 Q30 30 40 30 L55 30 Q60 30 60 35" stroke="white" strokeWidth="10" strokeLinecap="round" fill="none" />
           <path d="M30 40 L30 75 L55 75" stroke="white" strokeWidth="10" strokeLinecap="round" strokeLinejoin="round" fill="none" />
           <path d="M42 20 Q44 14 47 20" stroke="#FFB800" strokeWidth="4" strokeLinecap="round" fill="none" />
           <path d="M52 18 Q54 12 57 18" stroke="#FFB800" strokeWidth="4" strokeLinecap="round" fill="none" />
           <path d="M62 20 Q64 14 67 20" stroke="#FFB800" strokeWidth="4" strokeLinecap="round" fill="none" />
         </svg>
       </div>
-      <span className="text-2xl font-black tracking-tight text-brand-dark">
+      <span className={`text-2xl font-black tracking-tight ${isLight ? 'text-white' : 'text-brand-dark'}`}>
         FOOD<span className="text-brand-red">101</span>
       </span>
     </div>
