@@ -18,11 +18,11 @@ export default {
           muted: '#6B7280',
         },
         status: {
-          pending: '#F59E0B', // Amber
-          preparing: '#3B82F6', // Blue
-          delivery: '#8B5CF6', // Purple
-          delivered: '#10B981', // Emerald
-          rejected: '#EF4444', // Red
+          pending: '#F59E0B',
+          preparing: '#3B82F6',
+          delivery: '#8B5CF6',
+          delivered: '#10B981',
+          rejected: '#EF4444',
         }
       },
       fontFamily: {
@@ -32,6 +32,15 @@ export default {
         'xl': '12px',
         '2xl': '16px',
         '3xl': '24px',
+      },
+      keyframes: {
+        float: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-15px)' },
+        },
+      },
+      animation: {
+        float: 'float 6s ease-in-out infinite',
       },
     },
   },
