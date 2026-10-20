@@ -1,7 +1,8 @@
-import { Link, useLocation } from 'react-router-dom';
-import { ShoppingBag, User, Menu as MenuIcon, X } from 'lucide-react'; // We need to install lucide-react
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { ShoppingBag, User, Menu as MenuIcon, X, LogOut } from 'lucide-react';
 import { useState } from 'react';
 import { useCartStore } from '../store/cartStore';
+import { useAuth } from '../context/AuthContext';
 import Logo from './Logo';
 
 export default function Navbar() {
@@ -9,12 +10,19 @@ export default function Navbar() {
   const cartItems = useCartStore((state) => state.items);
   const cartCount = cartItems.reduce((sum, item) => sum + item.qty, 0);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
 
   const navLinks = [
     { name: 'Home', path: '/' },
     { name: 'Menu', path: '/menu' },
-    { name: 'My Orders', path: '/dashboard' },
+    { name: user ? 'My Orders' : 'Track Order', path: user ? '/dashboard' : '/login' },
   ];
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/');
+  };
 
   return (
     <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100">
@@ -24,7 +32,6 @@ export default function Navbar() {
             <Logo />
           </Link>
 
-          {/* Desktop Nav */}
           <div className="hidden md:flex items-center space-x-8">
             {navLinks.map((link) => (
               <Link
@@ -41,12 +48,8 @@ export default function Navbar() {
             ))}
           </div>
 
-          {/* Actions */}
           <div className="flex items-center space-x-4">
-            <Link
-              to="/cart"
-              className="relative flex items-center justify-center w-10 h-10 bg-brand-dark text-white rounded-xl hover:bg-gray-800 transition-colors"
-            >
+            <Link to="/cart" className="relative flex items-center justify-center w-10 h-10 bg-brand-dark text-white rounded-xl hover:bg-gray-800 transition-colors">
               <ShoppingBag size={20} />
               {cartCount > 0 && (
                 <span className="absolute -top-1 -right-1 bg-brand-red text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full">
@@ -54,35 +57,45 @@ export default function Navbar() {
                 </span>
               )}
             </Link>
-            <Link
-              to="/login"
-              className="hidden sm:flex items-center justify-center w-10 h-10 bg-gray-100 text-text-dark rounded-xl hover:bg-gray-200 transition-colors"
-            >
-              <User size={20} />
-            </Link>
-            <button
-              className="md:hidden p-2 text-text-dark"
-              onClick={() => setIsMobileOpen(!isMobileOpen)}
-            >
+
+            {user ? (
+              <div className="hidden sm:flex items-center gap-2">
+                <Link to={user.role === 'admin' ? '/admin' : '/dashboard'} className="flex items-center justify-center w-10 h-10 bg-gray-100 text-text-dark rounded-xl hover:bg-gray-200">
+                  <User size={20} />
+                </Link>
+                <button onClick={handleLogout} className="flex items-center justify-center w-10 h-10 bg-gray-100 text-red-500 rounded-xl hover:bg-red-50" title="Logout">
+                  <LogOut size={20} />
+                </button>
+              </div>
+            ) : (
+              <Link to="/login" className="hidden sm:flex items-center justify-center w-10 h-10 bg-gray-100 text-text-dark rounded-xl hover:bg-gray-200">
+                <User size={20} />
+              </Link>
+            )}
+
+            <button className="md:hidden p-2 text-text-dark" onClick={() => setIsMobileOpen(!isMobileOpen)}>
               {isMobileOpen ? <X size={24} /> : <MenuIcon size={24} />}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Mobile Nav */}
       {isMobileOpen && (
         <div className="md:hidden bg-white border-t border-gray-100 px-4 py-4 space-y-2">
           {navLinks.map((link) => (
-            <Link
-              key={link.name}
-              to={link.path}
-              onClick={() => setIsMobileOpen(false)}
-              className="block px-4 py-2 rounded-lg font-medium text-text-dark hover:bg-brand-cream"
-            >
+            <Link key={link.name} to={link.path} onClick={() => setIsMobileOpen(false)} className="block px-4 py-2 rounded-lg font-medium text-text-dark hover:bg-brand-cream">
               {link.name}
             </Link>
           ))}
+          {user ? (
+            <button onClick={() => { handleLogout(); setIsMobileOpen(false); }} className="block w-full text-left px-4 py-2 rounded-lg font-medium text-red-500 hover:bg-red-50">
+              Logout
+            </button>
+          ) : (
+            <Link to="/login" onClick={() => setIsMobileOpen(false)} className="block px-4 py-2 rounded-lg font-medium text-text-dark hover:bg-brand-cream">
+              Login
+            </Link>
+          )}
         </div>
       )}
     </nav>
