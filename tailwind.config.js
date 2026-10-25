@@ -8,9 +8,9 @@ export default {
     extend: {
       colors: {
         brand: {
-          red: '#FF4747',
+          red: '#D32F2F', // Updated to match the new logo red
           dark: '#1A1A1A',
-          gold: '#FFB800',
+          gold: '#FFB800', // The yellow from the "101" and steam
           cream: '#FDFBF7',
         },
         text: {
@@ -38,9 +38,19 @@ export default {
           '0%, 100%': { transform: 'translateY(0)' },
           '50%': { transform: 'translateY(-15px)' },
         },
+        'float-delayed': {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-10px)' },
+        },
+        'float-delayed-2': {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-8px)' },
+        }
       },
       animation: {
         float: 'float 6s ease-in-out infinite',
+        'float-delayed': 'float-delayed 7s ease-in-out infinite',
+        'float-delayed-2': 'float-delayed-2 8s ease-in-out infinite',
       },
     },
   },

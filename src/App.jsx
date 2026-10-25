@@ -13,9 +13,9 @@ import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/Dashboard';
 import Admin from './pages/Admin';
 import OrderStatus from './pages/OrderStatus';
+import PaymentCallback from './pages/PaymentCallback';
 import NotFound from './pages/NotFound';
 
-// Route guard — redirect to login if not authenticated
 function ProtectedRoute({ children, requireAdmin = false }) {
   const { user, isLoading } = useAuth();
   if (isLoading) return <div className="p-20 text-center">Loading...</div>;
@@ -38,25 +38,12 @@ export default function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password/:token" element={<ResetPassword />} />
           <Route path="/order-status/:id" element={<OrderStatus />} />
+          <Route path="/payment/callback" element={<PaymentCallback />} />
           <Route path="*" element={<NotFound />} />
         </Route>
 
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin"
-          element={
-            <ProtectedRoute requireAdmin>
-              <Admin />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/admin/*" element={<ProtectedRoute requireAdmin><Admin /></ProtectedRoute>} />
       </Routes>
     </AuthProvider>
   );

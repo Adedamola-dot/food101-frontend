@@ -8,8 +8,8 @@ export default function Cart() {
   const { items, updateQty, removeItem, clearCart } = useCartStore();
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.qty, 0);
-  const deliveryFee = 500;
-  const total = subtotal + deliveryFee;
+  const deliveryFee = 500; // Note: Actual delivery fee is determined at checkout
+  const total = subtotal + (items.length > 0 ? deliveryFee : 0);
 
   if (items.length === 0) {
     return (
@@ -19,10 +19,7 @@ export default function Cart() {
         </div>
         <h1 className="text-3xl font-black text-text-dark mb-4">Your cart is empty</h1>
         <p className="text-text-muted mb-8">Looks like you haven't added anything yet.</p>
-        <Link
-          to="/menu"
-          className="px-8 py-3 bg-brand-red text-white rounded-xl font-bold hover:bg-red-600 transition-colors"
-        >
+        <Link to="/menu" className="px-8 py-3 bg-brand-red text-white rounded-xl font-bold hover:bg-brand-gold transition-colors">
           Browse Menu
         </Link>
       </div>
@@ -30,14 +27,11 @@ export default function Cart() {
   }
 
   return (
-    <div className="bg-brand-cream min-h-screen py-12">
+    <div className="bg-brand-cream min-h-screen py-12 pb-24 md:pb-12">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-black text-text-dark">Your Cart</h1>
-          <button
-            onClick={clearCart}
-            className="text-sm font-semibold text-brand-red hover:underline flex items-center gap-1"
-          >
+          <button onClick={clearCart} className="text-sm font-semibold text-brand-red hover:text-brand-gold flex items-center gap-1 transition-colors">
             <Trash2 size={16} /> Clear Cart
           </button>
         </div>
@@ -46,35 +40,22 @@ export default function Cart() {
           <div className="divide-y divide-gray-100">
             {items.map((item) => (
               <div key={item.id} className="p-6 flex flex-col sm:flex-row items-center gap-4">
-                <img
-                  src={item.image}
-                  alt={item.name}
-                  className="w-20 h-20 rounded-xl object-cover"
-                />
+                <img src={item.image} alt={item.name} className="w-20 h-20 rounded-xl object-cover" />
                 <div className="flex-grow text-center sm:text-left">
                   <h3 className="font-bold text-text-dark text-lg">{item.name}</h3>
                   <p className="text-brand-red font-bold">{formatCurrency(item.price)}</p>
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="flex items-center border border-gray-200 rounded-lg">
-                    <button
-                      onClick={() => updateQty(item.id, Math.max(1, item.qty - 1))}
-                      className="p-2 hover:bg-gray-50 text-text-muted hover:text-text-dark transition-colors"
-                    >
+                    <button onClick={() => updateQty(item.id, Math.max(1, item.qty - 1))} className="p-2 hover:bg-brand-gold hover:text-white transition-colors rounded-l-lg">
                       <Minus size={16} />
                     </button>
                     <span className="w-8 text-center font-semibold">{item.qty}</span>
-                    <button
-                      onClick={() => updateQty(item.id, item.qty + 1)}
-                      className="p-2 hover:bg-gray-50 text-text-muted hover:text-text-dark transition-colors"
-                    >
+                    <button onClick={() => updateQty(item.id, item.qty + 1)} className="p-2 hover:bg-brand-gold hover:text-white transition-colors rounded-r-lg">
                       <Plus size={16} />
                     </button>
                   </div>
-                  <button
-                    onClick={() => removeItem(item.id)}
-                    className="p-2 text-gray-400 hover:text-red-500 transition-colors"
-                  >
+                  <button onClick={() => removeItem(item.id)} className="p-2 text-gray-400 hover:text-brand-red transition-colors">
                     <Trash2 size={20} />
                   </button>
                 </div>
@@ -91,7 +72,7 @@ export default function Cart() {
               <span className="font-medium text-text-dark">{formatCurrency(subtotal)}</span>
             </div>
             <div className="flex justify-between text-text-muted">
-              <span>Delivery Fee</span>
+              <span>Estimated Delivery Fee</span>
               <span className="font-medium text-text-dark">{formatCurrency(deliveryFee)}</span>
             </div>
             <div className="border-t border-gray-100 pt-3 flex justify-between items-center">
@@ -99,10 +80,9 @@ export default function Cart() {
               <span className="text-2xl font-black text-brand-red">{formatCurrency(total)}</span>
             </div>
           </div>
-
           <button
             onClick={() => navigate('/checkout')}
-            className="w-full py-4 bg-brand-red text-white rounded-xl font-bold text-lg hover:bg-red-600 transition-colors flex items-center justify-center gap-2 active:scale-[0.98]"
+            className="w-full py-4 bg-brand-red text-white rounded-xl font-bold text-lg hover:bg-brand-gold transition-colors flex items-center justify-center gap-2 active:scale-[0.98]"
           >
             Proceed to Checkout <ArrowRight size={20} />
           </button>

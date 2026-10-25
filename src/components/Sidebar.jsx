@@ -3,22 +3,17 @@ import { useState } from 'react';
 import { LogOut, Menu as MenuIcon, X } from 'lucide-react';
 import Logo from './Logo';
 
-/**
- * Reusable sidebar for dashboards.
- * @param {Array} links - [{ name, path, icon: ReactComponent }]
- * @param {string} title - Dashboard title (e.g., "My Account" or "Admin Panel")
- * @param {string} subtitle - Optional subtitle
- * @param {Function} onLogout - Logout handler
- */
 export default function Sidebar({ links, title, subtitle, onLogout }) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   const sidebarContent = (
     <>
-      <div className="p-6 border-b border-gray-100">
+      <div className="p-6 border-b border-gray-100 flex items-center justify-center md:justify-start">
         <Logo variant="icon" />
-        <h2 className="mt-4 font-black text-lg text-text-dark">{title}</h2>
-        {subtitle && <p className="text-xs text-text-muted">{subtitle}</p>}
+        <div className="ml-3 hidden md:block">
+          <h2 className="font-black text-lg text-text-dark">{title}</h2>
+          {subtitle && <p className="text-xs text-text-muted">{subtitle}</p>}
+        </div>
       </div>
 
       <nav className="flex-grow p-4 space-y-1">
@@ -33,8 +28,8 @@ export default function Sidebar({ links, title, subtitle, onLogout }) {
               className={({ isActive }) =>
                 `flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-colors ${
                   isActive
-                    ? 'bg-brand-red text-white'
-                    : 'text-text-dark hover:bg-gray-50'
+                    ? 'bg-brand-red text-white shadow-md'
+                    : 'text-text-dark hover:bg-brand-gold hover:text-white'
                 }`
               }
             >
@@ -49,7 +44,7 @@ export default function Sidebar({ links, title, subtitle, onLogout }) {
         <div className="p-4 border-t border-gray-100">
           <button
             onClick={onLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-red-500 hover:bg-red-50 transition-colors"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-red-500 hover:bg-red-500 hover:text-white transition-colors"
           >
             <LogOut size={20} />
             Logout
@@ -64,7 +59,7 @@ export default function Sidebar({ links, title, subtitle, onLogout }) {
       {/* Mobile toggle button */}
       <button
         onClick={() => setIsMobileOpen(true)}
-        className="lg:hidden fixed bottom-6 right-6 z-40 w-14 h-14 bg-brand-red text-white rounded-full shadow-lg flex items-center justify-center"
+        className="lg:hidden fixed bottom-20 right-6 z-40 w-14 h-14 bg-brand-dark text-white rounded-full shadow-lg flex items-center justify-center hover:bg-brand-gold transition-colors"
       >
         <MenuIcon size={24} />
       </button>
@@ -72,7 +67,7 @@ export default function Sidebar({ links, title, subtitle, onLogout }) {
       {/* Mobile sidebar (overlay) */}
       {isMobileOpen && (
         <div className="lg:hidden fixed inset-0 z-50 bg-black/50" onClick={() => setIsMobileOpen(false)}>
-          <div className="absolute right-0 top-0 h-full w-72 bg-white flex flex-col shadow-2xl" onClick={(e) => e.stopPropagation()}>
+          <div className="absolute left-0 top-0 h-full w-72 bg-white flex flex-col shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <button onClick={() => setIsMobileOpen(false)} className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100">
               <X size={20} />
             </button>
