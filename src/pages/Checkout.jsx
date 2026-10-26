@@ -4,7 +4,7 @@ import { useCartStore } from '../store/cartStore';
 import { useAuth } from '../context/AuthContext';
 import { formatCurrency } from '../lib/utils';
 import api from '../lib/axios';
-import { CreditCard, Banknote, ShieldCheck, AlertCircle, Store, Bike } from 'lucide-react';
+import { ShieldCheck, AlertCircle, Store, Bike, Mail } from 'lucide-react';
 
 const BRANCHES = [
   { id: 'polygate', name: 'Polygate, Ilorin' },
@@ -20,7 +20,6 @@ export default function Checkout() {
     customerName: user?.fullName || '',
     phone: user?.phone || '',
     customerEmail: user?.email || '',
-    paymentMethod: 'paystack',
     fulfillmentType: 'pickup',
     branch: 'polygate',
     address: '',
@@ -53,7 +52,12 @@ export default function Checkout() {
     try {
       const orderItems = items.map((item) => ({ id: item.menuId || item.id, qty: item.qty }));
       
-      const payload = { ...formData, items: orderItems };
+      const payload = { 
+        ...formData, 
+        items: orderItems,
+        paymentMethod: 'paystack' // Hardcoded
+      };
+      
       if (formData.fulfillmentType === 'pickup') payload.address = '';
       else payload.branch = '';
 
@@ -62,18 +66,14 @@ export default function Checkout() {
 
       if (guestAccessToken) sessionStorage.setItem(`order_${order.id}`, guestAccessToken);
 
-      if (formData.paymentMethod === 'paystack') {
-        const paymentPayload = { orderId: order.id };
-        if (guestAccessToken) paymentPayload.guestAccessToken = guestAccessToken;
-        
-        const paymentRes = await api.post('/payments/initialize', paymentPayload);
-        clearCart();
-        window.location.href = paymentRes.data.data.authorizationUrl;
-        return;
-      }
-
+      // Always initialize Paystack
+      const paymentPayload = { orderId: order.id };
+      if (guestAccessToken) paymentPayload.guestAccessToken = guestAccessToken;
+      
+      const paymentRes = await api.post('/payments/initialize', paymentPayload);
       clearCart();
-      navigate(`/order-status/${order.id}`);
+      window.location.href = paymentRes.data.data.authorizationUrl;
+
     } catch (err) {
       console.error('Checkout error:', err);
       let errorMessage = err.response?.data?.message || err.message || 'Something went wrong';
@@ -154,6 +154,15 @@ export default function Checkout() {
                 </div>
               </div>
 
+              <div>
+                <label className="block text-sm font-medium text-text-dark mb-1">Email Address <span className="text-brand-red">*</span></label>
+                <div className="relative">
+                  <Mail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input required type="email" name="customerEmail" value={formData.customerEmail} onChange={handleChange} placeholder="you@example.com" className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:border-brand-red focus:ring-2 focus:ring-red-100 outline-none transition-all" />
+                </div>
+                <p className="text-xs text-text-muted mt-1">Required for your payment receipt and order updates.</p>
+              </div>
+
               {formData.fulfillmentType === 'pickup' ? (
                 <div>
                   <label className="block text-sm font-medium text-text-dark mb-1">Select Branch</label>
@@ -175,35 +184,18 @@ export default function Checkout() {
             </div>
           </div>
 
-          {/* PAYMENT METHOD */}
+          {/* PAYMENT METHOD (Paystack Only) */}
           <div className="bg-white rounded-3xl shadow-sm p-6 sm:p-8">
-            <h2 className="text-xl font-bold text-text-dark mb-6">Payment Method</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-              <label className={`flex items-center gap-3 p-4 border rounded-xl cursor-pointer transition-all ${formData.paymentMethod === 'paystack' ? 'border-brand-red bg-red-50' : 'border-gray-200 hover:border-brand-gold'}`}>
-                <input type="radio" name="paymentMethod" value="paystack" checked={formData.paymentMethod === 'paystack'} onChange={handleChange} className="w-5 h-5 text-brand-red focus:ring-brand-red" />
-                <CreditCard className={formData.paymentMethod === 'paystack' ? 'text-brand-red' : 'text-gray-400'} />
-                <div>
-                  <span className="block font-bold text-text-dark">Pay Online</span>
-                  <span className="text-xs text-text-muted">Card via Paystack</span>
-                </div>
-              </label>
-              <label className={`flex items-center gap-3 p-4 border rounded-xl cursor-pointer transition-all ${formData.paymentMethod === 'cash' ? 'border-brand-red bg-red-50' : 'border-gray-200 hover:border-brand-gold'}`}>
-                <input type="radio" name="paymentMethod" value="cash" checked={formData.paymentMethod === 'cash'} onChange={handleChange} className="w-5 h-5 text-brand-red focus:ring-brand-red" />
-                <Banknote className={formData.paymentMethod === 'cash' ? 'text-brand-red' : 'text-gray-400'} />
-                <div>
-                  <span className="block font-bold text-text-dark">Pay on {formData.fulfillmentType === 'pickup' ? 'Pickup' : 'Delivery'}</span>
-                  <span className="text-xs text-text-muted">Cash or POS</span>
-                </div>
-              </label>
-            </div>
-
-            {formData.paymentMethod === 'paystack' && !user && (
-              <div className="pt-4 border-t border-gray-100">
-                <label className="block text-sm font-medium text-text-dark mb-1">Email <span className="text-brand-red">*</span></label>
-                <input required type="email" name="customerEmail" value={formData.customerEmail} onChange={handleChange} placeholder="you@example.com" className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-brand-red focus:ring-2 focus:ring-red-100 outline-none transition-all" />
-                <p className="text-xs text-text-muted mt-1">For your receipt and order updates.</p>
+            <h2 className="text-xl font-bold text-text-dark mb-4">Payment Method</h2>
+            <div className="flex items-center gap-4 p-4 border-2 border-brand-red bg-red-50 rounded-xl">
+              <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0BA4DB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
               </div>
-            )}
+              <div>
+                <span className="block font-bold text-text-dark">Pay Online</span>
+                <span className="text-xs text-text-muted">Secure payment via Paystack (Card, Transfer, USSD)</span>
+              </div>
+            </div>
           </div>
 
           {/* ORDER SUMMARY */}
@@ -228,12 +220,11 @@ export default function Checkout() {
               </div>
             </div>
 
-            {/* Main Action Button - Hover is now Yellow */}
             <button type="submit" disabled={isSubmitting} className="w-full py-4 bg-brand-red text-white rounded-xl font-bold text-lg hover:bg-brand-gold transition-colors disabled:opacity-70 flex items-center justify-center gap-2">
-              {isSubmitting ? 'Processing...' : `Place Order • ${formatCurrency(total)}`}
+              {isSubmitting ? 'Redirecting to Paystack...' : `Pay ${formatCurrency(total)}`}
             </button>
             <p className="text-center text-xs text-text-muted mt-4 flex items-center justify-center gap-1">
-              <ShieldCheck size={14} /> Secure checkout
+              <ShieldCheck size={14} /> Secure checkout powered by Paystack
             </p>
           </div>
         </form>
