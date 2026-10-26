@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Lock, CheckCircle, XCircle } from 'lucide-react';
+import { Lock, CheckCircle, XCircle, Eye, EyeOff } from 'lucide-react';
 import api from '../lib/axios';
 
 export default function ResetPassword() {
@@ -8,6 +8,8 @@ export default function ResetPassword() {
   const navigate = useNavigate();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
@@ -32,7 +34,7 @@ export default function ResetPassword() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-brand-cream px-4 py-12">
+    <div className="min-h-screen flex items-center justify-center bg-brand-cream px-4 py-12 pb-24 md:pb-12">
       <div className="w-full max-w-md">
         {isSuccess ? (
           <div className="bg-white rounded-3xl shadow-sm p-8 text-center">
@@ -41,7 +43,7 @@ export default function ResetPassword() {
             </div>
             <h1 className="text-2xl font-black text-text-dark mb-2">Password Reset!</h1>
             <p className="text-text-muted mb-6">Your password has been changed. Redirecting to login...</p>
-            <Link to="/login" className="text-brand-red font-bold hover:underline">Go to Login Now</Link>
+            <Link to="/login" className="text-brand-red font-bold hover:text-brand-gold transition-colors">Go to Login Now</Link>
           </div>
         ) : (
           <>
@@ -61,17 +63,45 @@ export default function ResetPassword() {
                   <label className="block text-sm font-medium text-text-dark mb-1">New Password</label>
                   <div className="relative">
                     <Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input required type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Min 8 chars, 1 letter + 1 number" className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:border-brand-red focus:ring-2 focus:ring-red-100 outline-none transition-all" />
+                    <input 
+                      required 
+                      type={showPassword ? 'text' : 'password'} 
+                      value={password} 
+                      onChange={(e) => setPassword(e.target.value)} 
+                      placeholder="Min 8 chars, 1 letter + 1 number" 
+                      className="w-full pl-10 pr-10 py-3 rounded-xl border border-gray-200 focus:border-brand-red focus:ring-2 focus:ring-red-100 outline-none transition-all" 
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-brand-gold transition-colors"
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
                   </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-text-dark mb-1">Confirm Password</label>
                   <div className="relative">
                     <Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input required type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Re-enter password" className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:border-brand-red focus:ring-2 focus:ring-red-100 outline-none transition-all" />
+                    <input 
+                      required 
+                      type={showConfirmPassword ? 'text' : 'password'} 
+                      value={confirmPassword} 
+                      onChange={(e) => setConfirmPassword(e.target.value)} 
+                      placeholder="Re-enter password" 
+                      className="w-full pl-10 pr-10 py-3 rounded-xl border border-gray-200 focus:border-brand-red focus:ring-2 focus:ring-red-100 outline-none transition-all" 
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-brand-gold transition-colors"
+                    >
+                      {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
                   </div>
                 </div>
-                <button type="submit" disabled={isSubmitting} className="w-full py-3.5 bg-brand-red text-white rounded-xl font-bold text-lg hover:bg-red-600 transition-colors disabled:opacity-70">
+                <button type="submit" disabled={isSubmitting} className="w-full py-3.5 bg-brand-red text-white rounded-xl font-bold text-lg hover:bg-brand-gold transition-colors disabled:opacity-70">
                   {isSubmitting ? 'Resetting...' : 'Reset Password'}
                 </button>
               </form>
