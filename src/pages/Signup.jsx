@@ -1,15 +1,24 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { User, Mail, Phone, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function Signup() {
   const navigate = useNavigate();
-  const { signup } = useAuth();
+  const { signup, user, isLoading: authLoading } = useAuth();
   const [formData, setFormData] = useState({ fullName: '', email: '', phone: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // --- THIS IS THE FIX: Automatically redirect if already logged in ---
+  useEffect(() => {
+    if (user && !authLoading) {
+      if (user.role === 'admin') navigate('/admin');
+      else navigate('/dashboard');
+    }
+  }, [user, authLoading, navigate]);
+  // -------------------------------------------------------------------
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -24,6 +33,10 @@ export default function Signup() {
       setIsSubmitting(false);
     }
   };
+
+  if (authLoading) {
+    return <div className="min-h-screen flex items-center justify-center bg-brand-cream"><p className="text-text-muted">Loading...</p></div>;
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-brand-cream px-4 py-12 pb-24 md:pb-12">

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -6,11 +6,20 @@ import { useAuth } from '../context/AuthContext';
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login } = useAuth();
+  const { login, user, isLoading: authLoading } = useAuth();
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(location.search.includes('error') ? 'Google login failed. Please try again.' : '');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // --- THIS IS THE FIX: Automatically redirect if already logged in ---
+  useEffect(() => {
+    if (user && !authLoading) {
+      if (user.role === 'admin') navigate('/admin');
+      else navigate('/dashboard');
+    }
+  }, [user, authLoading, navigate]);
+  // -------------------------------------------------------------------
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -26,6 +35,11 @@ export default function Login() {
       setIsSubmitting(false);
     }
   };
+
+  // If auth is still loading, show a spinner
+  if (authLoading) {
+    return <div className="min-h-screen flex items-center justify-center bg-brand-cream"><p className="text-text-muted">Loading...</p></div>;
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-brand-cream px-4 py-12 pb-24 md:pb-12">
