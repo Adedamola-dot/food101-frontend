@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { CheckCircle2, Clock, ChefHat, Bike, PackageCheck, Store, XCircle, ArrowLeft } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import api from '../lib/axios';
 import { formatCurrency } from '../lib/utils';
 
@@ -9,11 +10,10 @@ const getSteps = (fulfillmentType) => {
     return [
       { key: 'Pending', label: 'Order Received', description: 'We have received your order', icon: Clock },
       { key: 'Preparing', label: 'Preparing', description: 'Your food is being prepared', icon: ChefHat },
-      { key: 'Ready for Pickup', label: 'Ready for Pickup', description: 'Come grab your meal!', icon: Store },
+      { key: 'Ready for Pickup', label: 'Ready for Pickup', description: 'Show your QR code at the counter', icon: Store },
       { key: 'Completed', label: 'Picked Up', description: 'Enjoy your meal!', icon: PackageCheck },
     ];
   }
-  // Delivery
   return [
     { key: 'Pending', label: 'Order Received', description: 'We have received your order', icon: Clock },
     { key: 'Preparing', label: 'Preparing', description: 'Your food is being prepared', icon: ChefHat },
@@ -49,14 +49,12 @@ export default function OrderStatus() {
 
   useEffect(() => {
     if (!order) return;
-
     const connectSSE = async () => {
       try {
         const guestToken = sessionStorage.getItem(`order_${id}`);
         const params = guestToken ? { token: guestToken } : {};
         const tokenRes = await api.get(`/orders/${id}/stream-token`, { params });
         const { token } = tokenRes.data.data;
-
         const apiBase = api.defaults.baseURL.replace('/api', '');
         const url = `${apiBase}/api/orders/${id}/stream?token=${encodeURIComponent(token)}`;
         const es = new EventSource(url);
@@ -70,39 +68,26 @@ export default function OrderStatus() {
 
         es.addEventListener('status', (e) => {
           const data = JSON.parse(e.data);
-          setOrder((prev) => prev ? {
-            ...prev,
-            status: data.status,
-            statusHistory: [...(prev.statusHistory || []), { status: data.status, timestamp: data.timestamp }],
-          } : prev);
+          setOrder((prev) => prev ? { ...prev, status: data.status } : prev);
         });
 
         es.onerror = () => setSseConnected(false);
       } catch (err) {
-        console.error('SSE connection failed:', err);
         setSseConnected(false);
       }
     };
-
     connectSSE();
-
-    return () => {
-      if (eventSourceRef.current) eventSourceRef.current.close();
-    };
+    return () => { if (eventSourceRef.current) eventSourceRef.current.close(); };
   }, [order?.id, id]);
 
-  if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center bg-brand-cream"><p>Loading order...</p></div>;
-  }
-  if (error) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-brand-cream px-4">
-        <XCircle size={64} className="text-red-500 mb-4" />
-        <h1 className="text-2xl font-bold text-text-dark mb-2">{error}</h1>
-        <Link to="/menu" className="mt-6 px-6 py-3 bg-brand-red text-white rounded-xl font-bold">Back to Menu</Link>
-      </div>
-    );
-  }
+  if (isLoading) return <div className="min-h-screen flex items-center justify-center bg-brand-cream"><p>Loading order...</p></div>;
+  if (error) return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-brand-cream px-4">
+      <XCircle size={64} className="text-red-500 mb-4" />
+      <h1 className="text-2xl font-bold text-text-dark mb-2">{error}</h1>
+      <Link to="/menu" className="mt-6 px-6 py-3 bg-brand-red text-white rounded-xl font-bold">Back to Menu</Link>
+    </div>
+  );
 
   const steps = getSteps(order.fulfillmentType);
   const currentStepIndex = steps.findIndex((s) => s.key === order.status);
@@ -110,13 +95,13 @@ export default function OrderStatus() {
   const isRejected = order.status === 'Rejected';
 
   return (
-    <div className="min-h-screen bg-brand-cream py-12 px-4">
+    <div className="min-h-screen bg-brand-cream py-12 px-4 pb-24 md:pb-12">
       <div className="max-w-2xl mx-auto">
-        <button onClick={() => navigate('/dashboard')} className="flex items-center gap-2 text-text-muted hover:text-text-dark mb-6 text-sm font-medium">
+        <button onClick={() => navigate('/dashboard')} className="flex items-center gap-2 text-text-muted hover:text-brand-gold mb-6 text-sm font-medium transition-colors">
           <ArrowLeft size={16} /> Back to Orders
         </button>
 
-        <div className="bg-white rounded-3xl shadow-sm p-8 mb-6 text-center relative">
+        <div className="bg-white rounded-3xl shadow-sm p-8 mb-6 text-center relative overflow-hidden">
           {sseConnected && (
             <div className="absolute top-6 right-6 flex items-center gap-2 text-xs font-medium text-green-600">
               <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" /> Live
@@ -143,13 +128,21 @@ export default function OrderStatus() {
                 {order.status === 'Delivered' && 'Delivered!'}
                 {order.status === 'Completed' && 'Picked Up!'}
               </h1>
-              <p className="text-text-muted">
-                {order.fulfillmentType === 'pickup' ? 'Branch: ' : 'Estimated delivery: '}
-                {order.fulfillmentType === 'pickup' ? (order.branch === 'polygate' ? 'Polygate' : 'Teaching Hospital') : '25 - 35 mins'}
-              </p>
             </>
           )}
         </div>
+
+        {/* QR CODE SECTION - Only shows if paid */}
+        {order.paymentStatus === 'paid' && !isRejected && (
+          <div className="bg-white rounded-3xl shadow-sm p-8 mb-6 text-center">
+            <h2 className="text-xl font-bold text-text-dark mb-2">Your Digital Receipt</h2>
+            <p className="text-sm text-text-muted mb-6">Show this QR code to the kitchen staff at pickup.</p>
+            <div className="inline-block p-4 bg-white border-2 border-dashed border-gray-200 rounded-2xl">
+              <QRCodeSVG value={order.id} size={180} level="H" includeMargin={true} />
+            </div>
+            <p className="mt-4 text-xs font-mono text-gray-400">#{order.id}</p>
+          </div>
+        )}
 
         {!isRejected && (
           <div className="bg-white rounded-3xl shadow-sm p-8 mb-6">
@@ -177,39 +170,6 @@ export default function OrderStatus() {
             </div>
           </div>
         )}
-
-        <div className="bg-white rounded-3xl shadow-sm p-8 mb-6">
-          <h2 className="text-xl font-bold text-text-dark mb-4">Order Details</h2>
-          <div className="space-y-3 text-sm">
-            <div className="flex justify-between">
-              <span className="text-text-muted">Items</span>
-              <span className="font-medium text-text-dark text-right max-w-[60%]">{order.itemsSummary}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-text-muted">Total</span>
-              <span className="font-bold text-brand-red">{formatCurrency(order.totalAmount)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-text-muted">Payment</span>
-              <span className="font-medium text-text-dark capitalize">
-                {order.paymentMethod === 'paystack' ? 'Paid Online' : 'Pay on ' + (order.fulfillmentType === 'pickup' ? 'Pickup' : 'Delivery')}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-text-muted">{order.fulfillmentType === 'pickup' ? 'Branch' : 'Address'}</span>
-              <span className="font-medium text-text-dark text-right max-w-[60%]">
-                {order.fulfillmentType === 'pickup' 
-                  ? (order.branch === 'polygate' ? 'Polygate, Ilorin' : 'Opp. Teaching Hospital, Ilorin') 
-                  : order.address}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-3">
-          <Link to="/menu" className="block text-center py-4 bg-brand-red text-white rounded-xl font-bold hover:bg-red-600 transition-colors">Order Again</Link>
-          <Link to="/" className="block text-center py-4 bg-brand-dark text-white rounded-xl font-bold hover:bg-gray-800 transition-colors">Back to Home</Link>
-        </div>
       </div>
     </div>
   );

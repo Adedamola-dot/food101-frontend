@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, Routes, Route } from 'react-router-dom';
-import { ListOrdered, Package, BarChart3, RefreshCw, Store, Bike, Bell, BellOff } from 'lucide-react';
+import { ListOrdered, Package, BarChart3, RefreshCw, Store, Bike, Bell, BellOff, ScanLine } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import Sidebar from '../components/Sidebar';
+import QRScannerModal from '../components/QRScannerModal';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../lib/axios';
 import { formatCurrency } from '../lib/utils';
@@ -30,9 +31,13 @@ const getNextStatus = (order) => {
 
 function LiveOrders() {
   const queryClient = useQueryClient();
-  const prevCount = useRef(null); // Start as null to avoid beeping on initial load
+  const prevCount = useRef(null);
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  
+  // QR Scanner State
+  const [isScanning, setIsScanning] = useState(false);
+  const [scannedOrderId, setScannedOrderId] = useState(null);
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['admin-orders'],
@@ -42,88 +47,108 @@ function LiveOrders() {
         ['Pending', 'Preparing', 'Ready for Pickup', 'Out for Delivery'].includes(o.status)
       );
     },
-    refetchInterval: 10000, // Poll every 10 seconds
+    refetchInterval: 10000,
   });
 
-  // --- NOTIFICATION LOGIC ---
   useEffect(() => {
     if (data) {
-      // If prevCount is null, this is the initial load. Just set the count.
       if (prevCount.current === null) {
         prevCount.current = data.length;
         return;
       }
-
-      // If the number of orders increased, we have a new order!
       if (data.length > prevCount.current) {
-        // Play Sound
         if (soundEnabled) {
           const audio = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
           audio.play().catch(e => console.log('Audio blocked'));
         }
-        
-        // Show Visual Toast
         setToastMessage('🔔 New Order Received!');
-        setTimeout(() => setToastMessage(''), 5000); // Hide after 5 seconds
+        setTimeout(() => setToastMessage(''), 5000);
       }
-      
       prevCount.current = data.length;
     }
   }, [data, soundEnabled]);
-  // --------------------------
 
   const handleStatusUpdate = async (orderId, newStatus) => {
     try {
       await api.patch(`/admin/orders/${orderId}/status`, { status: newStatus });
       queryClient.invalidateQueries({ queryKey: ['admin-orders'] });
       queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
+      setScannedOrderId(null); // Clear scan filter after action
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to update status');
     }
   };
 
+  // Filter based on scanned order if one exists
+  const displayedOrders = scannedOrderId 
+    ? data?.filter(o => o.id === scannedOrderId) 
+    : data;
+
   return (
     <>
-      {/* Visual Toast Notification */}
       {toastMessage && (
         <div className="fixed top-24 right-8 bg-brand-dark text-white px-6 py-4 rounded-xl shadow-2xl z-50 animate-bounce font-bold flex items-center gap-3 border border-brand-gold">
           {toastMessage}
         </div>
       )}
 
-      <div className="flex justify-between items-center mb-6">
+      <QRScannerModal 
+        isOpen={isScanning} 
+        onClose={() => setIsScanning(false)} 
+        onScanSuccess={(id) => {
+          setIsScanning(false);
+          setScannedOrderId(id);
+        }} 
+      />
+
+      <div className="flex justify-between items-center mb-6 flex-wrap gap-3">
         <h1 className="text-2xl font-black text-text-dark">Live Orders</h1>
-        <div className="flex gap-2">
-          {/* Sound Toggle Button */}
+        <div className="flex gap-2 flex-wrap">
+          
+          <button 
+            onClick={() => setIsScanning(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-brand-dark text-white rounded-xl text-sm font-medium hover:bg-brand-gold transition-colors shadow-md"
+          >
+            <ScanLine size={16} /> Scan QR Code
+          </button>
+
           <button 
             onClick={() => setSoundEnabled(!soundEnabled)} 
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border transition-colors ${soundEnabled ? 'bg-brand-gold text-white border-brand-gold' : 'bg-white text-text-muted border-gray-200 hover:bg-gray-50'}`}
           >
             {soundEnabled ? <Bell size={16} /> : <BellOff size={16} />}
-            {soundEnabled ? 'Sound On' : 'Enable Sound'}
+            {soundEnabled ? 'Sound On' : 'Sound'}
           </button>
           
-          <button onClick={() => refetch()} className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl text-sm font-medium text-text-dark hover:bg-brand-gold hover:text-white border border-gray-200 transition-colors">
+          <button onClick={() => refetch()} className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl text-sm font-medium text-text-dark hover:bg-gray-50 border border-gray-200 transition-colors">
             <RefreshCw size={16} /> Refresh
           </button>
         </div>
       </div>
 
+      {/* Clear filter banner if a code was scanned */}
+      {scannedOrderId && (
+        <div className="mb-4 bg-blue-50 text-blue-800 p-3 rounded-xl flex justify-between items-center text-sm font-medium border border-blue-200">
+          <span>Showing order <strong>#{scannedOrderId}</strong> from QR scan.</span>
+          <button onClick={() => setScannedOrderId(null)} className="text-blue-600 underline">Show All Orders</button>
+        </div>
+      )}
+
       {isLoading ? (
         <div className="bg-white rounded-3xl p-12 text-center text-text-muted">Loading orders...</div>
-      ) : !data || data.length === 0 ? (
+      ) : !displayedOrders || displayedOrders.length === 0 ? (
         <div className="bg-white rounded-3xl p-12 text-center">
           <ListOrdered size={48} className="mx-auto text-gray-300 mb-4" />
-          <p className="text-text-muted">No active orders right now. You're all caught up!</p>
+          <p className="text-text-muted">{scannedOrderId ? "Order not found or already completed." : "No active orders right now. You're all caught up!"}</p>
         </div>
       ) : (
         <div className="space-y-4">
-          {data.map((order) => {
+          {displayedOrders.map((order) => {
             const nextAction = getNextStatus(order);
             const canReject = order.status === 'Pending';
 
             return (
-              <div key={order.id} className="bg-white rounded-2xl shadow-sm p-5">
+              <div key={order.id} className={`bg-white rounded-2xl shadow-sm p-5 ${scannedOrderId ? 'ring-4 ring-brand-gold' : ''}`}>
                 <div className="flex flex-wrap justify-between items-start gap-3 mb-3">
                   <div>
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -137,15 +162,9 @@ function LiveOrders() {
                       </span>
                     </div>
                     <p className="text-sm text-text-muted">{order.customerName} • {order.phone}</p>
-                    <p className="text-xs text-gray-400 mt-1">
-                      {order.fulfillmentType === 'pickup' 
-                        ? `Branch: ${order.branch === 'polygate' ? 'Polygate' : 'Teaching Hospital'}` 
-                        : `Address: ${order.address}`}
-                    </p>
                   </div>
                   <div className="text-right">
                     <p className="font-bold text-brand-red">{formatCurrency(order.totalAmount)}</p>
-                    <p className="text-xs text-gray-400 mt-1">{order.date}</p>
                   </div>
                 </div>
                 <p className="text-sm text-text-muted mb-4 bg-brand-cream p-3 rounded-xl">{order.itemsSummary}</p>
