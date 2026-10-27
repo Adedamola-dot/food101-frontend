@@ -1,27 +1,28 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { CheckCircle2, ShieldCheck, Store, Bike, User, Calendar } from 'lucide-react';
 import api from '../lib/axios';
 import { formatCurrency } from '../lib/utils';
 import Logo from '../components/Logo';
 
 export default function Receipt() {
-  const { id } = useParams();
-  
-  // SANITIZER: If the URL accidentally has extra slashes (e.g. F101-123/123),
-  // this splits it and grabs only the actual Order ID.
-  const cleanId = id.split('/')[0]; 
+  // BULLETPROOF ID EXTRACTION:
+  // This grabs the very last part of the URL, no matter how many slashes there are.
+  const pathParts = window.location.pathname.split('/');
+  const id = pathParts[pathParts.length - 1]; 
 
   const [order, setOrder] = useState(null);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    api.get(`/orders/${cleanId}/public-receipt`)
+    if (!id) return;
+    
+    api.get(`/orders/${id}/public-receipt`)
       .then((res) => setOrder(res.data.data.order))
       .catch((err) => setError(err.response?.data?.message || 'Receipt not found'))
       .finally(() => setIsLoading(false));
-  }, [cleanId]);
+  }, [id]);
 
   if (isLoading) return <div className="min-h-screen flex items-center justify-center bg-brand-cream"><p>Loading receipt...</p></div>;
   if (error) return <div className="min-h-screen flex flex-col items-center justify-center bg-brand-cream"><h1 className="text-2xl font-bold text-red-500">{error}</h1><Link to="/" className="mt-4 text-brand-red underline">Go Home</Link></div>;
