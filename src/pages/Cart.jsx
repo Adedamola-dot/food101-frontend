@@ -8,8 +8,6 @@ export default function Cart() {
   const { items, updateQty, removeItem, clearCart } = useCartStore();
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.qty, 0);
-  const deliveryFee = 500; // Note: Actual delivery fee is determined at checkout
-  const total = subtotal + (items.length > 0 ? deliveryFee : 0);
 
   if (items.length === 0) {
     return (
@@ -65,19 +63,21 @@ export default function Cart() {
         </div>
 
         <div className="bg-white rounded-3xl shadow-sm p-6 sm:p-8">
-          <h2 className="text-xl font-bold text-text-dark mb-6">Order Summary</h2>
+          <h2 className="text-xl font-bold text-text-dark mb-6">Cart Summary</h2>
           <div className="space-y-3 mb-6">
             <div className="flex justify-between text-text-muted">
               <span>Subtotal</span>
               <span className="font-medium text-text-dark">{formatCurrency(subtotal)}</span>
             </div>
-            <div className="flex justify-between text-text-muted">
-              <span>Estimated Delivery Fee</span>
-              <span className="font-medium text-text-dark">{formatCurrency(deliveryFee)}</span>
-            </div>
-            <div className="border-t border-gray-100 pt-3 flex justify-between items-center">
+            
+            {/* The delivery fee is completely removed from here */}
+            <p className="text-xs text-gray-400 pt-2 border-t border-gray-100">
+              * Delivery fee (if applicable) will be calculated at checkout.
+            </p>
+            
+            <div className="pt-3 flex justify-between items-center">
               <span className="text-lg font-bold text-text-dark">Total</span>
-              <span className="text-2xl font-black text-brand-red">{formatCurrency(total)}</span>
+              <span className="text-2xl font-black text-brand-red">{formatCurrency(subtotal)}</span>
             </div>
           </div>
           <button
