@@ -12,6 +12,7 @@ export default function Receipt() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // This is the correct API call: /api/orders/F101-XXXXXX/public-receipt
     api.get(`/orders/${id}/public-receipt`)
       .then((res) => setOrder(res.data.data.order))
       .catch((err) => setError(err.response?.data?.message || 'Receipt not found'))
