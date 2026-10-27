@@ -7,43 +7,39 @@ import Logo from '../components/Logo';
 
 export default function Receipt() {
   const { id } = useParams();
+  
+  // SANITIZER: If the URL accidentally has extra slashes (e.g. F101-123/123),
+  // this splits it and grabs only the actual Order ID.
+  const cleanId = id.split('/')[0]; 
+
   const [order, setOrder] = useState(null);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // This is the correct API call: /api/orders/F101-XXXXXX/public-receipt
-    api.get(`/orders/${id}/public-receipt`)
+    api.get(`/orders/${cleanId}/public-receipt`)
       .then((res) => setOrder(res.data.data.order))
       .catch((err) => setError(err.response?.data?.message || 'Receipt not found'))
       .finally(() => setIsLoading(false));
-  }, [id]);
+  }, [cleanId]);
 
   if (isLoading) return <div className="min-h-screen flex items-center justify-center bg-brand-cream"><p>Loading receipt...</p></div>;
   if (error) return <div className="min-h-screen flex flex-col items-center justify-center bg-brand-cream"><h1 className="text-2xl font-bold text-red-500">{error}</h1><Link to="/" className="mt-4 text-brand-red underline">Go Home</Link></div>;
 
-  // Format the timestamp nicely (e.g., "24 Oct 2026, 10:45 AM")
   const formattedDateTime = new Date(order.timestamp).toLocaleString('en-GB', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: true
+    day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true
   });
 
   return (
     <div className="min-h-screen bg-brand-cream py-12 px-4 flex justify-center items-center">
       <div className="bg-white rounded-3xl shadow-xl w-full max-w-md overflow-hidden">
         
-        {/* Header */}
         <div className="bg-brand-dark p-6 text-center text-white">
           <Logo className="mx-auto h-10 mb-4" />
           <h1 className="text-2xl font-black">Payment Receipt</h1>
           <p className="text-gray-400 text-sm mt-1">#{order.id}</p>
         </div>
 
-        {/* Status */}
         <div className="p-6 border-b border-gray-100 text-center">
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
             <CheckCircle2 size={32} className="text-green-600" />
@@ -51,7 +47,6 @@ export default function Receipt() {
           <h2 className="text-xl font-bold text-text-dark">Payment Successful</h2>
         </div>
 
-        {/* Verification Details (Name, Date & Time) - To prevent fraud */}
         <div className="p-6 bg-gray-50 border-b border-gray-100 space-y-3">
           <div className="flex items-center justify-between text-sm">
             <span className="text-text-muted flex items-center gap-2"><User size={16} /> Customer</span>
@@ -63,7 +58,6 @@ export default function Receipt() {
           </div>
         </div>
 
-        {/* Order Details */}
         <div className="p-6 space-y-4">
           <div className="flex justify-between text-sm">
             <span className="text-text-muted">Method</span>
@@ -92,7 +86,6 @@ export default function Receipt() {
           </div>
         </div>
 
-        {/* Footer */}
         <div className="bg-brand-cream p-4 text-center">
           <p className="text-xs text-text-muted flex items-center justify-center gap-1">
             <ShieldCheck size={14} /> Verified by Food 101
