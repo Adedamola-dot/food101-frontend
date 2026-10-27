@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
-import { useNavigate, useLocation, Routes, Route } from 'react-router-dom';
-import { ListOrdered, Package, BarChart3, RefreshCw, Store, Bike } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { useNavigate, Routes, Route } from 'react-router-dom';
+import { ListOrdered, Package, BarChart3, RefreshCw, Store, Bike, Bell, BellOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import Sidebar from '../components/Sidebar';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -30,6 +30,9 @@ const getNextStatus = (order) => {
 
 function LiveOrders() {
   const queryClient = useQueryClient();
+  const prevCount = useRef(null); // Start as null to avoid beeping on initial load
+  const [soundEnabled, setSoundEnabled] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['admin-orders'],
@@ -39,8 +42,35 @@ function LiveOrders() {
         ['Pending', 'Preparing', 'Ready for Pickup', 'Out for Delivery'].includes(o.status)
       );
     },
-    refetchInterval: 30000,
+    refetchInterval: 10000, // Poll every 10 seconds
   });
+
+  // --- NOTIFICATION LOGIC ---
+  useEffect(() => {
+    if (data) {
+      // If prevCount is null, this is the initial load. Just set the count.
+      if (prevCount.current === null) {
+        prevCount.current = data.length;
+        return;
+      }
+
+      // If the number of orders increased, we have a new order!
+      if (data.length > prevCount.current) {
+        // Play Sound
+        if (soundEnabled) {
+          const audio = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
+          audio.play().catch(e => console.log('Audio blocked'));
+        }
+        
+        // Show Visual Toast
+        setToastMessage('🔔 New Order Received!');
+        setTimeout(() => setToastMessage(''), 5000); // Hide after 5 seconds
+      }
+      
+      prevCount.current = data.length;
+    }
+  }, [data, soundEnabled]);
+  // --------------------------
 
   const handleStatusUpdate = async (orderId, newStatus) => {
     try {
@@ -54,11 +84,29 @@ function LiveOrders() {
 
   return (
     <>
+      {/* Visual Toast Notification */}
+      {toastMessage && (
+        <div className="fixed top-24 right-8 bg-brand-dark text-white px-6 py-4 rounded-xl shadow-2xl z-50 animate-bounce font-bold flex items-center gap-3 border border-brand-gold">
+          {toastMessage}
+        </div>
+      )}
+
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-black text-text-dark">Live Orders</h1>
-        <button onClick={() => refetch()} className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl text-sm font-medium text-text-dark hover:bg-brand-gold hover:text-white border border-gray-200 transition-colors">
-          <RefreshCw size={16} /> Refresh
-        </button>
+        <div className="flex gap-2">
+          {/* Sound Toggle Button */}
+          <button 
+            onClick={() => setSoundEnabled(!soundEnabled)} 
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border transition-colors ${soundEnabled ? 'bg-brand-gold text-white border-brand-gold' : 'bg-white text-text-muted border-gray-200 hover:bg-gray-50'}`}
+          >
+            {soundEnabled ? <Bell size={16} /> : <BellOff size={16} />}
+            {soundEnabled ? 'Sound On' : 'Enable Sound'}
+          </button>
+          
+          <button onClick={() => refetch()} className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl text-sm font-medium text-text-dark hover:bg-brand-gold hover:text-white border border-gray-200 transition-colors">
+            <RefreshCw size={16} /> Refresh
+          </button>
+        </div>
       </div>
 
       {isLoading ? (
