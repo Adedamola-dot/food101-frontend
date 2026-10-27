@@ -14,6 +14,7 @@ import Dashboard from './pages/Dashboard';
 import Admin from './pages/Admin';
 import OrderStatus from './pages/OrderStatus';
 import PaymentCallback from './pages/PaymentCallback';
+import Receipt from './pages/Receipt'; // <-- IMPORTED HERE
 import NotFound from './pages/NotFound';
 
 function ProtectedRoute({ children, requireAdmin = false }) {
@@ -39,6 +40,10 @@ export default function App() {
           <Route path="/reset-password/:token" element={<ResetPassword />} />
           <Route path="/order-status/:id" element={<OrderStatus />} />
           <Route path="/payment/callback" element={<PaymentCallback />} />
+          
+          {/* NEW ROUTE FOR THE RECEIPT */}
+          <Route path="/receipt/:id" element={<Receipt />} />
+          
           <Route path="*" element={<NotFound />} />
         </Route>
 
