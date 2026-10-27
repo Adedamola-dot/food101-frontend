@@ -94,6 +94,10 @@ export default function OrderStatus() {
   const displayIndex = currentStepIndex === -1 ? 0 : currentStepIndex;
   const isRejected = order.status === 'Rejected';
 
+  // --- THIS IS THE CRUCIAL FIX ---
+  // We construct the full URL using the current domain
+  const receiptUrl = `${window.location.origin}/receipt/${order.id}`;
+
   return (
     <div className="min-h-screen bg-brand-cream py-12 px-4 pb-24 md:pb-12">
       <div className="max-w-2xl mx-auto">
@@ -132,13 +136,18 @@ export default function OrderStatus() {
           )}
         </div>
 
-        {/* QR CODE SECTION - Only shows if paid */}
+        {/* QR CODE SECTION - Now with the FULL URL */}
         {order.paymentStatus === 'paid' && !isRejected && (
           <div className="bg-white rounded-3xl shadow-sm p-8 mb-6 text-center">
             <h2 className="text-xl font-bold text-text-dark mb-2">Your Digital Receipt</h2>
-            <p className="text-sm text-text-muted mb-6">Show this QR code to the kitchen staff at pickup.</p>
+            <p className="text-sm text-text-muted mb-6">Scan this QR code to view the payment receipt.</p>
             <div className="inline-block p-4 bg-white border-2 border-dashed border-gray-200 rounded-2xl">
-              <QRCodeSVG value={order.id} size={180} level="H" includeMargin={true} />
+              <QRCodeSVG 
+                value={receiptUrl} 
+                size={180} 
+                level="H" 
+                includeMargin={true} 
+              />
             </div>
             <p className="mt-4 text-xs font-mono text-gray-400">#{order.id}</p>
           </div>
