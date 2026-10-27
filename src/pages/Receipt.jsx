@@ -1,23 +1,22 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { CheckCircle2, ShieldCheck, Store, Bike, User, Calendar } from 'lucide-react';
 import api from '../lib/axios';
 import { formatCurrency } from '../lib/utils';
 import Logo from '../components/Logo';
 
 export default function Receipt() {
-  // BULLETPROOF ID EXTRACTION:
-  // This grabs the very last part of the URL, no matter how many slashes there are.
-  const pathParts = window.location.pathname.split('/');
-  const id = pathParts[pathParts.length - 1]; 
-
+  // useParams grabs exactly the ID from the URL
+  const { id } = useParams();
+  
   const [order, setOrder] = useState(null);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (!id) return;
-    
+
+    // This will request /api/orders/F101-XXXXXX/public-receipt
     api.get(`/orders/${id}/public-receipt`)
       .then((res) => setOrder(res.data.data.order))
       .catch((err) => setError(err.response?.data?.message || 'Receipt not found'))
